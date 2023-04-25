@@ -116,6 +116,27 @@ class Order(models.Model):
     def __str__(self):
         return f'{self.user} - {self.data_time}'
 
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, verbose_name='Заказ', related_name='ordered_items',
+                              blank=True,on_delete=models.CASCADE)
+    info_product = models.ForeignKey(InfoProduct, verbose_name='Информация о продукте',related_name='ordered_items',
+                                     blank=True, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1, verbose_name='Количество')
+    price = models.PositiveIntegerField(default=0, verbose_name='Цена')
+    total_cost = models.PositiveIntegerField(default=0, verbose_name='Общая стоимость')
+
+    class Meta:
+        verbose_name = 'Заказанная позиция'
+        verbose_name_plural = 'Список заказанных позиций'
+        constraints = [
+            models.UniqueConstraint(fields=['order_id', 'info_product'], name='unique_order_item'),
+        ]
+    def __str__(self):
+        return f'№ {self.order} - {self.info_product.model}. Кол-во: {self.quantity}. Сумма: {self.total_cost}'
+
+    def save(self, *args, **kwargs):
+        self.total_cost = self.price * self.quantity
+        super(OrderItem, self).save(*args, **kwargs)
 
 
 
