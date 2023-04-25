@@ -1,6 +1,14 @@
 from django.db import models
 
-
+STATUS_CHOICES = (
+    ('Статус корзины'),
+    ('Новый'),
+    ('Подтвержден'),
+    ('Собран'),
+    ('Отправлен'),
+    ('Доставлен'),
+    ('Отменен'),
+)
 class Shop(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название магазина')
     url = models.URLField(verbose_name='Сайт магазина', null=True, blank=True)
@@ -64,9 +72,6 @@ class InfoProduct(models.Model):
         return f'{self.shop.name} - {self.product.name}'
 
 
-    def __str__(self):
-        return self.name
-
 
 class Parameter(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название параметра')
@@ -94,5 +99,23 @@ class ProductParameter(models.Model):
 
     def __str__(self):
         return f'{self.info_product.model} - {self.parameter.name}'
+
+class Order(models.Model):
+    user = models.ForeignKey(User, verbose_name='Пользователь', related_name='orders', blank=True,
+                             on_delete=models.CASCADE)
+    contact = models.ForeignKey(Contact, verbose_name='Контакт', related_name='Контакт', blank=True,
+                                null=True, on_delete=models.CASCADE)
+    data_time = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, verbose_name='Статус', choices=STATUS_CHOICES)
+
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Список заказов'
+        ordering = ('-data_time',)
+
+    def __str__(self):
+        return f'{self.user} - {self.data_time}'
+
+
 
 
