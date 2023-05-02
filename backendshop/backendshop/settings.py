@@ -37,8 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'backendshop'
-    'django_rest_passwordreset'
+    'backendshop',
+
 ]
 
 MIDDLEWARE = [
