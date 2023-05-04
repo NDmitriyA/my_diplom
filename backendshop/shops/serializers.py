@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Category, Shop, InfoProduct, Product, ProductParameter, OrderItem, Order
 
-
 from ..auth_user.models import Contact, User
 
 
@@ -36,7 +35,6 @@ class ShopSerializer(serializers.ModelSerializer):
         model = Shop
         fields = ('id', 'name', 'state')
         read_only_fields = ('id',)
-
 
 
 class ProductSerializer(serializers.ModelSerializer):
