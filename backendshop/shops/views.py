@@ -74,3 +74,22 @@ class AccountLogin(APIView):
         return Response({'Status': False, 'Errors': 'Не указаны необходимые данные'},
                         status=status.HTTP_400_BAD_REQUEST)
 
+
+class DetailsAccount(APIView):
+    """работа с данными пользователей"""
+    throttle_scope = 'user'
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'Status': False, 'Error': 'Login required'},
+                            status=status.HTTP_403_FORBIDDEN)
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        """изменение данных пользователя"""
+        if not request.user.is_authenticated:
+            return  Response({'Status': False, 'Error': 'Login required'}, status=status.HTTP_403_FORBIDDEN)
+
+
+
+
