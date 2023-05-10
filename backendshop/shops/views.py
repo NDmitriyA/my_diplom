@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from backendshop.auth_user.models import ConfirmEmailToken
 from backendshop.shops.models import Category, Shop
-from backendshop.shops.serializers import UserSerializer, CategorySerializer, ShopSerializer
+from backendshop.shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer
 
 
 class AccountRegister(APIView):
@@ -118,6 +118,15 @@ class ShopView(viewsets.ModelViewSet):
     queryset = Shop.objects.all()
     serializer_class = ShopSerializer
     ordering = ('name',)
+
+class InfoProductView(viewsets.ReadOnlyModelViewSet):
+    """поиск товаров"""
+    throttle_scope = 'anon'
+    serializer_class = ProductInfoSerializer
+    ordering = ('product',)
+
+
+
 
 
 
