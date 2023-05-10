@@ -1,13 +1,14 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.http import JsonResponse
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from backendshop.auth_user.models import ConfirmEmailToken
-from backendshop.shops.serializers import UserSerializer
+from backendshop.shops.models import Category, Shop
+from backendshop.shops.serializers import UserSerializer, CategorySerializer, ShopSerializer
 
 
 class AccountRegister(APIView):
@@ -86,9 +87,39 @@ class DetailsAccount(APIView):
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-        """изменение данных пользователя"""
+        """создание данных пользователя"""
         if not request.user.is_authenticated:
-            return  Response({'Status': False, 'Error': 'Login required'}, status=status.HTTP_403_FORBIDDEN)
+            return  Response({'Status': False, 'Error': 'Login required'},
+                             status=status.HTTP_403_FORBIDDEN)
+        """проверяем и сохраняем пароль"""
+        if 'password' in request.data:
+            try:
+                validate_password(request.data['password'])
+            except Exception as password_error:
+                return Response({'Status': False, 'Errors': {'password': password_error}})
+            else:
+                request.user.set_password(request.data['password'])
+        #проверяем остальные данные
+        user_serialiszer = UserSerializer(request.data, data=request.data, partial=True)
+        if user_serialiszer.is_valid():
+            user_serialiszer.save()
+            return Response({'Status': True}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'Status': False, 'Errors': user_serialiszer.errors},
+                            status=status.HTTP_400_BAD_REQUEST)
+class CategoryView(viewsets.ModelViewSet):
+    """просмотр категорий"""
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    ordering = ('name',)
+
+class ShopView(viewsets.ModelViewSet):
+    """просомтр списка магазинов"""
+    queryset = Shop.objects.all()
+    serializer_class = ShopSerializer
+    ordering = ('name',)
+
+
 
 
 
