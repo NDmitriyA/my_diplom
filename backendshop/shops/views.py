@@ -1,16 +1,18 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.db import IntegrityError
 from django.db.models import Q, Sum, F
 from django.http import JsonResponse
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from ijson import loads as load_json
 
 from backendshop.auth_user.models import ConfirmEmailToken
 from backendshop.shops.models import Category, Shop, InfoProduct, Order
 from backendshop.shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
-    OrderSerializer
+    OrderSerializer, OrderItemSerializer
 
 
 class AccountRegister(APIView):
@@ -167,5 +169,34 @@ class BasketView(APIView):
 
         serializer = OrderSerializer(basket, many=True)
         return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+        items_basket = request.data.get('items')
+        if items_basket:
+            try:
+                items_dict = load_json(items_basket)
+            except ValueError:
+                JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
+            else:
+                basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+                objects_created = 0
+                for order_items in items_dict:
+                    order_items.update({'order': basket.id})
+                    serializer = OrderItemSerializer(data=order_items)
+                    if serializer.is_valid():
+                        try:
+                            serializer.save()
+                        except IntegrityError as error:
+                            return JsonResponse({'Status': False, 'Errors': str(error)})
+                        else:
+                            objects_created += 1
+                    else:
+                        JsonResponse({'Status': False, 'Errors': serializer.errors})
+                return JsonResponse({'Status': True, 'Создано объектов': objects_created})
+            return JsonResponse({'Status': False, 'Errors': 'Не указаны необходимые данные'})
+
 
 
