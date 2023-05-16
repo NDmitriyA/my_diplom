@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from ijson import loads as load_json
 
 from backendshop.auth_user.models import ConfirmEmailToken
-from backendshop.shops.models import Category, Shop, InfoProduct, Order
+from backendshop.shops.models import Category, Shop, InfoProduct, Order, OrderItem
 from backendshop.shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderSerializer, OrderItemSerializer
 
@@ -197,6 +197,52 @@ class BasketView(APIView):
                         JsonResponse({'Status': False, 'Errors': serializer.errors})
                 return JsonResponse({'Status': True, 'Создано объектов': objects_created})
             return JsonResponse({'Status': False, 'Errors': 'Не указаны необходимые данные'})
+
+    def delete(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+        items_sting = request.data.get('items')
+        if items_sting:
+            item_list = items_sting.split(',')
+            basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+            query = Q()
+            objects_delete = False
+            for order_item_id in item_list:
+                query = query | Q(order_id=basket.id, id=order_item_id)
+                objects_delete = True
+            if objects_delete:
+                delete_count = OrderItem.objects.filter(query).delete()[0]
+                return JsonResponse({'Status': True, 'Удалено объектов': delete_count})
+            return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
+
+    def put(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+        items_posit = request.data.get('items')
+        if items_posit:
+            try:
+                items_dict = load_json(items_posit)
+            except ValueError:
+                JsonResponse({'Status': False, 'Error': 'Не верный формат запроса'})
+            else:
+                basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+                objects_update = 0
+                for order_item in items_dict:
+                    if type(order_item['id']) == int and type(order_item['quantity']) == int:
+                        objects_update += OrderItem.objects.filter(order_id=basket.id,
+                                                                   id=order_item['id']).update(quantity=order_item
+                                                                                              ['quantity'])
+                    return JsonResponse({'Status': True, 'Обновлено объектов': objects_update})
+                return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
+
+    class OrderView(APIView):
+        '''получение и размещение заказов пользователей'''
+        throttle_scope = 'user'
+
+
+
 
 
 
