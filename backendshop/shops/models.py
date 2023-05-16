@@ -1,15 +1,15 @@
 from django.db import models
 
-from backendshop.auth_user.models import User, Contact
+from auth_user.models import User, Contact
 
 STATUS_CHOICES = (
-    ('Статус корзины'),
-    ('Новый'),
-    ('Подтвержден'),
-    ('Собран'),
-    ('Отправлен'),
-    ('Доставлен'),
-    ('Отменен'),
+    ('basket', 'Статус корзины'),
+    ('New', 'Новый'),
+    ('Confirmed', 'Подтвержден'),
+    ('Assembled', 'Собран'),
+    ('Sent', 'Отправлен'),
+    ('Delivered', 'Доставлен'),
+    ('Canceled', 'Отменен'),
 )
 
 

@@ -9,9 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from ijson import loads as load_json
 
-from backendshop.auth_user.models import ConfirmEmailToken
-from backendshop.shops.models import Category, Shop, InfoProduct, Order, OrderItem
-from backendshop.shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
+from auth_user.models import ConfirmEmailToken
+from shops.models import Category, Shop, InfoProduct, Order, OrderItem
+from shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderSerializer, OrderItemSerializer
 
 
@@ -238,8 +238,20 @@ class BasketView(APIView):
                 return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
 
     class OrderView(APIView):
-        '''получение и размещение заказов пользователей'''
+        '''получение и размещение заказов пользователями'''
         throttle_scope = 'user'
+
+        def get(self, request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return Response({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+            order = Order.objects.filter(
+                user_id=request.user.id).exclude(status='basket').select_related('contact').prefetch_related(
+                    'ordered_items').annotate(total_quantity=Sum('ordered_items__quantity'),
+                      total_sum=Sum('ordered_items__total_amount')).dictinct()
+
+            serializer = OrderSerializer(order, many=True)
+            return Response(serializer.data)
 
 
 

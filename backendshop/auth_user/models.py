@@ -4,11 +4,11 @@ from django.utils.translation import gettext_lazy as _
 from django_rest_passwordreset.tokens import get_token_generator
 from django.db import models
 
-
 USER_TYPE_CHOICES = (
     ('shop', 'Магазин'),
     ('buyer', 'Покупатель'),
 )
+
 
 class UserManager(BaseUserManager):
     use_in_migration = True
@@ -40,6 +40,7 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self._create_user(email, password, **extra_fields)
+
 
 class User(AbstractUser):
     """
@@ -76,7 +77,7 @@ class Contact(models.Model):
     building = models.CharField(max_length=15, verbose_name='Строение', blank=True)
     apartment = models.CharField(max_length=15, verbose_name='Квартира', blank=True)
     phone = models.CharField(max_length=20, verbose_name='Телефон')
-    phone_2 = models.CharField (max_length=20, verbose_name='Рабочий телефон', blank=True)
+    phone_2 = models.CharField(max_length=20, verbose_name='Рабочий телефон', blank=True)
 
     class Meta:
         verbose_name = 'Контакты пользователя'
@@ -85,6 +86,7 @@ class Contact(models.Model):
     def __str__(self):
         return f'{self.city} {self.phone}'
 
+
 class ConfirmEmailToken(models.Model):
     class Meta:
         verbose_name = 'Токен подтверждения Email'
@@ -92,7 +94,6 @@ class ConfirmEmailToken(models.Model):
 
     @staticmethod
     def generate_key():
-
         return get_token_generator().generate_token()
 
     user = models.ForeignKey(
@@ -106,7 +107,6 @@ class ConfirmEmailToken(models.Model):
         auto_now_add=True,
         verbose_name=_("When was this token generated")
     )
-
 
     key = models.CharField(
         _("Key"),
