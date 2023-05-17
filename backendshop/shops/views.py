@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.db import IntegrityError
@@ -7,12 +8,12 @@ from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ijson import loads as load_json
+from ujson import loads as load_json
 
-from auth_user.models import ConfirmEmailToken
+from auth_user.models import ConfirmEmailToken, Contact
 from shops.models import Category, Shop, InfoProduct, Order, OrderItem
 from shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
-    OrderSerializer, OrderItemSerializer
+    OrderSerializer, OrderItemSerializer, ContactSerializer
 
 
 class AccountRegister(APIView):
@@ -252,6 +253,58 @@ class BasketView(APIView):
 
             serializer = OrderSerializer(order, many=True)
             return Response(serializer.data)
+
+        def post(self, request, *args, **kwargs):
+            '''размещение заказа,отправка письма об изменении статуса заказа'''
+
+            if not request.user.is_authenticated:
+                return Response({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+            if request.data['id'].isdigit():
+                try:
+                    is_update = Order.objects.filter(id=request.data['id'], user_id=request.user.id).update(
+                        contact_id=request.data['contact'], status='new')
+                except IntegrityError as error:
+                    return Response({'Status': False, 'Error': 'Неправильно указаны необходимые данные'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    if is_update:
+                        request.user.email_user(f'Обновление статуса заказа','Заказ сформирован',
+                                                from_email=settings.EMAIL_HOST_USER)
+                        return Response({'Status': True})
+            return Response({'Status': False, 'Error': 'Не указаны необходимые данные'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+class ContactView(APIView):
+    '''работа с контактами покупателей'''
+
+    throttle_scope = 'user'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+        contact = Contact.objects.filter(user_id=request.user.id)
+        serializer = ContactSerializer(contact, many=True)
+        return Response(serializer.data)
+
+    '''добавить контакт'''
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+        if {'city', 'phone'}.issubset(request.data):
+            request.data._mutable = True
+            request.data.update({'user': request.user.id})
+            serializer = ContactSerializer(data=request.data)
+
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse({'Status': True})
+            else:
+                JsonResponse({'Status': False, 'Error': serializer.errors})
+        return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
+
 
 
 
