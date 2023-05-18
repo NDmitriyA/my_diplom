@@ -1,8 +1,10 @@
+from distutils.util import strtobool
+
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.db import IntegrityError
-from django.db.models import Q, Sum, F
+from django.db.models import Q, Sum, F, Prefetch
 from django.http import JsonResponse
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
@@ -305,7 +307,121 @@ class ContactView(APIView):
                 JsonResponse({'Status': False, 'Error': serializer.errors})
         return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
 
+    '''удалить контакт'''
+    def delete(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+        items_cont = request.data.get('items')
+        if items_cont:
+            items_list = items_cont.split(',')
+            query = Q()
+            objects_delete = False
+            for contact_id in items_list:
+                if contact_id.isdigit():
+                    query = query | Q(user_id=request.user.id, id=contact_id)
+                    objects_delete = True
+            if objects_delete:
+                delete_count = Contact.objects.filter(query).delete()[0]
+                return JsonResponse({'Status': True, 'удалено объектов': delete_count})
+            return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
 
+    '''редактировать контак'''
+    def put(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+        if 'id' in request.data:
+            if request.data['id'].isdigit():
+                contact = Contact.objects.filter(id=request.data['id'], user_id=request.user.id).first()
+                if contact:
+                    serializer = ContactSerializer(contact, data=request.data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return JsonResponse({'Status': True})
+                    else:
+                        JsonResponse({'Status': False, 'Error': serializer.errors})
+        return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
+
+class PartnerOrders(APIView):
+    '''получение заказов поставщиками'''
+    throttle_scope = 'user'
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Требуется вход в систему'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if request.user.type != 'shop':
+            return Response({'Status': False, 'Error': 'Только для магазинов'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        pr = Prefetch('ordered_items', queryset=OrderItem.objects.filter(shop__user_id=request.user.id))
+        order = Order.objects.filter(
+            ordered_items__shop__user_id=request.user.id).exclude(status='basket') \
+            .prefetch_related(pr).select_related('contact').annotate(
+            total_sum=Sum('ordered_items__total_amount'),
+            total_quantity=Sum('ordered_items__quantity'))
+
+        serializer = OrderSerializer(order, many=True)
+        return Response(serializer.data)
+
+class PartherState(APIView):
+    '''работа со статусом поставщика'''
+    throttle_scope = 'user'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'Status': False, 'Error': 'Требуется вход в систему'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        if request.user.type != 'shop':
+            return Response({'Status': False, 'Error': 'Только для магазинов'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        shop = request.user.shop
+        serializer = ShopSerializer(shop)
+        return Response(serializer.data)
+
+        # Изменить текущий статус получения заказов у магазина
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'Status': False, 'Error': 'Требуется вход в систему'}, status=status.HTTP_403_FORBIDDEN)
+
+        if request.user.type != 'shop':
+            return Response({'Status': False, 'Error': 'Только для магазинов'}, status=status.HTTP_403_FORBIDDEN)
+
+        state = request.data.get('state')
+        if state:
+            try:
+                Shop.objects.filter(user_id=request.user.id).update(state=strtobool(state))
+                return Response({'Status': True})
+            except ValueError as error:
+                return Response({'Status': False, 'Errors': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'Status': False, 'Error': 'Не указан аргумент state.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    class PartnerUpdate(APIView):
+        '''обновления прайса от поставщика'''
+        throttle_scope = 'partner'
+
+        def post(self, request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return Response({'Status': False, 'Error': 'Требуется вход в систему'},
+                                status=status.HTTP_403_FORBIDDEN)
+
+            if request.user.type != 'shop':
+                return Response({'Status': False, 'Error': 'Только для магазинов'},
+                                status=status.HTTP_403_FORBIDDEN)
+
+            file = request.FILES
+            if file:
+                user_id = request.user.id
+                import_shop_data(file, user_id)
+
+                return Response({'Status': True})
+
+            return Response({'Status': False, 'Error': 'Не указаны необходимые данные'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 
