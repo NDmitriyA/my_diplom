@@ -16,6 +16,7 @@ from auth_user.models import ConfirmEmailToken, Contact
 from shops.models import Category, Shop, InfoProduct, Order, OrderItem
 from shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderSerializer, OrderItemSerializer, ContactSerializer
+from shops.tascks import import_shop_data
 
 
 class AccountRegister(APIView):
@@ -240,42 +241,42 @@ class BasketView(APIView):
                     return JsonResponse({'Status': True, 'Обновлено объектов': objects_update})
                 return JsonResponse({'Status': False, 'Error': 'Не указаны необходимые данные'})
 
-    class OrderView(APIView):
-        '''получение и размещение заказов пользователями'''
-        throttle_scope = 'user'
+class OrderView(APIView):
+    '''получение и размещение заказов пользователями'''
+    throttle_scope = 'user'
 
-        def get(self, request, *args, **kwargs):
-            if not request.user.is_authenticated:
-                return Response({'Status': False, 'Error': 'Требуется вход в систему'},
-                                status=status.HTTP_403_FORBIDDEN)
-            order = Order.objects.filter(
-                user_id=request.user.id).exclude(status='basket').select_related('contact').prefetch_related(
-                    'ordered_items').annotate(total_quantity=Sum('ordered_items__quantity'),
-                      total_sum=Sum('ordered_items__total_amount')).dictinct()
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'Status': False, 'Error': 'Требуется вход в систему'},
+                            status=status.HTTP_403_FORBIDDEN)
+        order = Order.objects.filter(
+            user_id=request.user.id).exclude(status='basket').select_related('contact').prefetch_related(
+                'ordered_items').annotate(total_quantity=Sum('ordered_items__quantity'),
+                  total_sum=Sum('ordered_items__total_amount')).dictinct()
 
-            serializer = OrderSerializer(order, many=True)
-            return Response(serializer.data)
+        serializer = OrderSerializer(order, many=True)
+        return Response(serializer.data)
 
-        def post(self, request, *args, **kwargs):
-            '''размещение заказа,отправка письма об изменении статуса заказа'''
+    def post(self, request, *args, **kwargs):
+        '''размещение заказа,отправка письма об изменении статуса заказа'''
 
-            if not request.user.is_authenticated:
-                return Response({'Status': False, 'Error': 'Требуется вход в систему'},
-                                status=status.HTTP_403_FORBIDDEN)
-            if request.data['id'].isdigit():
-                try:
-                    is_update = Order.objects.filter(id=request.data['id'], user_id=request.user.id).update(
-                        contact_id=request.data['contact'], status='new')
-                except IntegrityError as error:
-                    return Response({'Status': False, 'Error': 'Неправильно указаны необходимые данные'},
-                                    status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    if is_update:
-                        request.user.email_user(f'Обновление статуса заказа','Заказ сформирован',
-                                                from_email=settings.EMAIL_HOST_USER)
-                        return Response({'Status': True})
-            return Response({'Status': False, 'Error': 'Не указаны необходимые данные'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        if not request.user.is_authenticated:
+            return Response({'Status': False, 'Error': 'Требуется вход в систему'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if request.data['id'].isdigit():
+            try:
+                is_update = Order.objects.filter(id=request.data['id'], user_id=request.user.id).update(
+                    contact_id=request.data['contact'], status='new')
+            except IntegrityError as error:
+                return Response({'Status': False, 'Error': 'Неправильно указаны необходимые данные'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            else:
+                if is_update:
+                    request.user.email_user(f'Обновление статуса заказа','Заказ сформирован',
+                                            from_email=settings.EMAIL_HOST_USER)
+                    return Response({'Status': True})
+        return Response({'Status': False, 'Error': 'Не указаны необходимые данные'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 class ContactView(APIView):
     '''работа с контактами покупателей'''
@@ -400,28 +401,28 @@ class PartherState(APIView):
         return Response({'Status': False, 'Error': 'Не указан аргумент state.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    class PartnerUpdate(APIView):
-        '''обновления прайса от поставщика'''
-        throttle_scope = 'partner'
+class PartnerUpdate(APIView):
+    '''обновления прайса от поставщика'''
+    throttle_scope = 'partner'
 
-        def post(self, request, *args, **kwargs):
-            if not request.user.is_authenticated:
-                return Response({'Status': False, 'Error': 'Требуется вход в систему'},
-                                status=status.HTTP_403_FORBIDDEN)
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'Status': False, 'Error': 'Требуется вход в систему'},
+                            status=status.HTTP_403_FORBIDDEN)
 
-            if request.user.type != 'shop':
-                return Response({'Status': False, 'Error': 'Только для магазинов'},
-                                status=status.HTTP_403_FORBIDDEN)
+        if request.user.type != 'shop':
+            return Response({'Status': False, 'Error': 'Только для магазинов'},
+                            status=status.HTTP_403_FORBIDDEN)
 
-            file = request.FILES
-            if file:
-                user_id = request.user.id
-                import_shop_data(file, user_id)
+        file = request.FILES
+        if file:
+            user_id = request.user.id
+            import_shop_data(file, user_id)
 
-                return Response({'Status': True})
+            return Response({'Status': True})
 
-            return Response({'Status': False, 'Error': 'Не указаны необходимые данные'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'Status': False, 'Error': 'Не указаны необходимые данные'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 
