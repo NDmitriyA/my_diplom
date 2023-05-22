@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'shops',
     'auth_user',
     'django_rest_passwordreset',
-    'import_export',
+
 
 
 ]

@@ -16,7 +16,7 @@ from auth_user.models import ConfirmEmailToken, Contact
 from shops.models import Category, Shop, InfoProduct, Order, OrderItem
 from shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderSerializer, OrderItemSerializer, ContactSerializer
-from shops.tascks import import_shop_data
+from shops.tasks import import_shop_data
 
 
 class AccountRegister(APIView):

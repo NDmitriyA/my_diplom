@@ -3,7 +3,7 @@ from django_rest_passwordreset.views import reset_password_request_token, reset_
 from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from shops.views import ShopView, CategoryView, PartnerUpdate, BasketView, ContactView, PartnerOrders, OrderView, \
+from .views import ShopView, CategoryView, PartnerUpdate, BasketView, ContactView, PartnerOrders, OrderView, \
     AccountRegister, AccountConfirm, AccountLogin, DetailsAccount, PartherState, InfoProductView
 
 app_name = 'shops'
