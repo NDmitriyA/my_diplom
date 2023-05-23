@@ -37,14 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'backendshop',
     'rest_framework',
     'rest_framework.authtoken',
     'shops',
     'auth_user',
     'django_rest_passwordreset',
-
-
 
 ]
 
@@ -123,7 +120,7 @@ STATIC_URL = '/static/'
 STORAGE = os.path.join(BASE_DIR, 'storage')
 
 
-AUTH_USER_MODEL = 'auth_user.User'
+AUTH_USER_MODEL = 'shops.User'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

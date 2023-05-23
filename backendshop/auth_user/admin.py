@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User, Contact, ConfirmEmailToken
+from shops.models import Contact, ConfirmEmailToken, User
 
 
 @admin.register(User)

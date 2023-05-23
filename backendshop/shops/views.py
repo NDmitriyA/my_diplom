@@ -12,8 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from ujson import loads as load_json
 
-from auth_user.models import ConfirmEmailToken, Contact
-from shops.models import Category, Shop, InfoProduct, Order, OrderItem
+
+from shops.models import Category, Shop, InfoProduct, Order, OrderItem, ConfirmEmailToken, Contact
 from shops.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderSerializer, OrderItemSerializer, ContactSerializer
 from shops.tasks import import_shop_data

@@ -1,7 +1,7 @@
 from django.dispatch import receiver, Signal
 from django_rest_passwordreset.signals import reset_password_token_created
 
-from auth_user.models import ConfirmEmailToken, User
+from .models import ConfirmEmailToken, User
 
 
 from .tasks import send_email
