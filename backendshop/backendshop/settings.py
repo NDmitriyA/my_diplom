@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'shops',
     'auth_user',
     'django_rest_passwordreset',
-    'social_django',
+
 
 ]
 
@@ -69,8 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
+
             ],
         },
     },
@@ -105,36 +104,36 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-SOCIAL_AUTH_POSTGRES_JSONFIELD = True
+# SOCIAL_AUTH_POSTGRES_JSONFIELD = True
 
 AUTHENTICATION_BACKENDS = [
-    'social_auth.backends.facebook.FacebookBackend',
-    'social_auth.backends.contrib.vk.VKOAuth2Backend',
-    'social_auth.backends.google.GoogleOAuth2Backend',
+    # 'social_auth.backends.facebook.FacebookBackend',
+    # 'social_auth.backends.contrib.vk.VKOAuth2Backend',
+    # 'social_auth.backends.google.GoogleOAuth2Backend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+#
+# VK_APP_ID = 'app_id'
+# VKONTAKTE_APP_ID = VK_APP_ID
+# VK_API_SECRET = 'key_api_secret'
+# VKONTAKTE_APP_SECRET = VK_API_SECRET
+#
+#
+# GOOGLE_OAUTH2_CLIENT_ID = '123456789.apps.googleusercontent.com'
+# GOOGLE_OAUTH2_CLIENT_SECRET = 'key_secert'
 
-VK_APP_ID = 'app_id'
-VKONTAKTE_APP_ID = VK_APP_ID
-VK_API_SECRET = 'key_api_secret'
-VKONTAKTE_APP_SECRET = VK_API_SECRET
 
-
-GOOGLE_OAUTH2_CLIENT_ID = '123456789.apps.googleusercontent.com'
-GOOGLE_OAUTH2_CLIENT_SECRET = 'key_secert'
-
-
-SOCIAL_AUTH_PIPELINE = [
-    'social_core.pipeline.social_auth.social_details',
-    'social_core.pipeline.social_auth.social_uid',
-    'social_core.pipeline.social_auth.social_user',
-    'social_core.pipeline.user.get_username',
-    'social_core.pipeline.social_auth.associate_by_email',
-    'social_core.pipeline.user.create_user',
-    'social_core.pipeline.social_auth.associate_user',
-    'social_core.pipeline.social_auth.load_extra_data',
-    'social_core.pipeline.user.user_details',
-]
+# SOCIAL_AUTH_PIPELINE = [
+#     'social_core.pipeline.social_auth.social_details',
+#     'social_core.pipeline.social_auth.social_uid',
+#     'social_core.pipeline.social_auth.social_user',
+#     'social_core.pipeline.user.get_username',
+#     'social_core.pipeline.social_auth.associate_by_email',
+#     'social_core.pipeline.user.create_user',
+#     'social_core.pipeline.social_auth.associate_user',
+#     'social_core.pipeline.social_auth.load_extra_data',
+#     'social_core.pipeline.user.user_details',
+# ]
 
 
 
