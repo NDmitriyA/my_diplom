@@ -26,3 +26,6 @@ def test_post_login():
     response_body = response.json()
     assert response_body['Status'] == True
     assert response.status_code == 200
+
+def test_example():
+    pass
