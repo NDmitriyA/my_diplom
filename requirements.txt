@@ -182,3 +182,6 @@ yarl==1.8.2
 zipp==3.15.0
 zope.event==4.6
 zope.interface==6.0
+
+pytest~=7.3.2
+tasks-py~=1.0.3
